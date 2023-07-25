@@ -1,14 +1,35 @@
+---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: sample-service-test-orphan-docs
-  title: Sample Service Test Orphan Docs
-  description: |
-    A service for testing docs places on an orphan branch to avoid polluting a repo when docs duplicate native docs.
+  name: sample-backend
+  title: Sample Service Backend
+  description: >
+    A service for testing Backstage functionality. Configured for
+    GitHub Actions and
+
+    Sentry.
+  labels:
+    tier: "3"
+  links:
+    - url: https://www.notion.so/roadie/Sample-Service-e067465e56a14ae9b0507f8559f6aa26
+      title: Datadog
+      icon: dashboard
+  tags:
+    - test
+    - js
+    - demo
   annotations:
-    backstage.io/techdocs-ref: url:https://github.com/RoadieHQ/sample-service/tree/orphan-branch-docs
-    qameta.io/allure-project: asdf
+    github.com/project-slug: RoadieHQ/sample-service
+    sonarqube.org/project-key: AcmeInc_blah-template
+    datadoghq.com/slo_tag: service
 spec:
   type: service
-  owner: dtuite
-  lifecycle: experimental
+  owner: sample-team
+  lifecycle: production
+  system: sample-system
+  providesApis:
+    - sample-service
+  dependsOn:
+    - Component:sample-service-2
+    - Resource:sample-s3-bucket
