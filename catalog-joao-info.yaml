@@ -33,3 +33,16 @@ spec:
   dependsOn:
     - Component:sample-service-2
     - Resource:sample-s3-bucket
+
+  ---
+
+  apiVersion: backstage.io/v1alpha1
+  kind: Component
+  metadata:
+    name: core-queueing-library
+    description: Push jobs onto a globally available shared queue.
+  spec:
+    type: library
+    lifecycle: production
+    owner: roadie
+    
