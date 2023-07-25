@@ -19,6 +19,9 @@ metadata:
   annotations:
     github.com/project-slug: RoadieHQ/sample-service
     sonarqube.org/project-key: AcmeInc_blah-template
+    datadoghq.com/tag-name: sample-service
+    datadoghq.com/slo_tag: service:sample-service
+    datadoghq.com/monitor_tags: sample-service
     # The Sentry organization is stored in the app-config.yaml of the Backstage instance.
 spec:
   type: service
