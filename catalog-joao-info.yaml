@@ -1,10 +1,13 @@
+---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: sample-api
   title: Sample Service API
-  description: |
-    A service for testing Backstage functionality. Configured for GitHub Actions and
+  description: >
+    A service for testing Backstage functionality. Configured for
+    GitHub Actions and
+
     Sentry.
   labels:
     tier: "3"
@@ -22,7 +25,6 @@ metadata:
     datadoghq.com/tag-name: sample-service
     datadoghq.com/slo_tag: service:tutorial-slo-api
     datadoghq.com/monitor_tags: sample-service
-    # The Sentry organization is stored in the app-config.yaml of the Backstage instance.
 spec:
   type: service
   owner: sample-team
@@ -34,15 +36,13 @@ spec:
     - Component:sample-service-2
     - Resource:sample-s3-bucket
 
-  ---
-
-  apiVersion: backstage.io/v1alpha1
-  kind: Component
-  metadata:
-    name: sample-service-trigger
-    description: Push jobs onto a globally available shared queue.
-  spec:
-    type: library
-    lifecycle: production
-    owner: roadie
-    
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sample-service-trigger
+  description: Push jobs onto a globally available shared queue.
+spec:
+  type: library
+  lifecycle: production
+  owner: roadie
