@@ -1,0 +1,35 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sample-api
+  title: Sample Service API
+  description: |
+    A service for testing Backstage functionality. Configured for GitHub Actions and
+    Sentry.
+  labels:
+    tier: "3"
+  links:
+    - url: https://www.notion.so/roadie/Sample-Service-e067465e56a14ae9b0507f8559f6aa26
+      title: Datadog
+      icon: dashboard
+  tags:
+    - test
+    - js
+    - demo
+  annotations:
+    github.com/project-slug: RoadieHQ/sample-service
+    sonarqube.org/project-key: AcmeInc_blah-template
+    datadoghq.com/tag-name: sample-service
+    datadoghq.com/slo_tag: service:tutorial-slo-api
+    datadoghq.com/monitor_tags: sample-service
+    # The Sentry organization is stored in the app-config.yaml of the Backstage instance.
+spec:
+  type: service
+  owner: sample-team
+  lifecycle: production
+  system: sample-system
+  providesApis:
+    - sample-service
+  dependsOn:
+    - Component:sample-service-2
+    - Resource:sample-s3-bucket
