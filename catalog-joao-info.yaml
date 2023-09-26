@@ -1,8 +1,8 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: sample-api
-  title: Sample Service API
+  name: sample-api-joao
+  title: Sample Service API Joao
   description: >
     A service for testing Backstage functionality. Configured for
     GitHub Actions and
@@ -19,8 +19,7 @@ metadata:
     - js
     - demo
   annotations:
-    github.com/project-slug: RoadieHQ/sample-service
-    sonarqube.org/project-key: AcmeInc_blah-template
+    github.com/project-slug: JoaoMartins51/sample-service
     datadoghq.com/tag-name: sample-service
     datadoghq.com/slo_tag: service:tutorial-slo-api
     datadoghq.com/monitor_tags: sample-service
