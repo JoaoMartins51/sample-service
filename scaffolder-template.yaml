@@ -1,0 +1,37 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: github-actions-template
+  title: Trigger workflow
+  description: Triggers workflow.
+spec:
+  owner: backstage/techdocs-core
+  type: service
+
+  parameters:
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            # Here's the option you can pass to the RepoUrlPicker
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - workflow
+            allowedHosts:
+              - github.com
+  output:
+    links:
+      - title: Testing Icon
+        url: https://google.com
+    text:
+      - title: Testing text
+        content: |
+          The test is a success
+  
