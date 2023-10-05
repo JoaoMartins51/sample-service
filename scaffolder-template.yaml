@@ -26,6 +26,16 @@ spec:
                   - workflow
             allowedHosts:
               - github.com
+  steps:
+     - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: This is ${{ parameters.name }}
+        repoUrl: ${{ parameters.repoUrl }}
+        # here's where the secret can be used
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
   output:
     links:
       - title: Testing Icon
