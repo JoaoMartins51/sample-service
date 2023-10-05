@@ -18,7 +18,6 @@ spec:
           type: string
           ui:field: RepoUrlPicker
           ui:options:
-            # Here's the option you can pass to the RepoUrlPicker
             requestUserCredentials:
               secretsKey: USER_OAUTH_TOKEN
               additionalScopes:
@@ -27,14 +26,13 @@ spec:
             allowedHosts:
               - github.com
   steps:
-     - id: publish
+    - id: publish
       name: Publish
       action: publish:github
       input:
         allowedHosts: ['github.com']
         description: This is ${{ parameters.name }}
         repoUrl: ${{ parameters.repoUrl }}
-        # here's where the secret can be used
         token: ${{ secrets.USER_OAUTH_TOKEN }}
   output:
     links:
@@ -44,4 +42,3 @@ spec:
       - title: Testing text
         content: |
           The test is a success
-  
