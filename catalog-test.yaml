@@ -1,0 +1,955 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: test-k8s-service-template
+  description: TEST .NET MICROSERVICE TEMPLATE DO NOT USE
+  annotations:
+    github.com/project-slug: relativityone/test-k8s-service-template
+    backstage.io/techdocs-ref: dir:. # This assumes you have a /docs folder
+spec:
+  type: repository
+  lifecycle: experimental
+  owner: ptci-1599
+  system: backstage
+
+---
+
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-k8s-service-template
+  title: TEST DO NOT USE - .NET Microservice Template
+  tags:
+    - shipyard
+    - dotnet
+  description: |
+    TEST .NET MICROSERVICE TEMPLATE DO NOT USE
+spec:
+  owner: ptci-1599
+  type: repository
+
+  parameters:
+    - title: Service Information
+      description: |
+        Parameters defining the service and its characteristics.
+
+        **When naming your service, make sure you do not use any reserved keywords found on the [following page](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/) as the compile step will fail during the build process.**
+      type: object
+      required:
+        - repoUrl
+        - serviceDescription
+        - imageOs
+      properties:
+        csharpkeywords:
+          type: boolean
+          title: I have verified that I do not use any C# reserved keywords in the Service Name
+          default: false
+          enum:
+            - true
+        repoUrl:
+          type: string
+          title: Service Name
+          description: name (in lower-kebab-case) used for the repository. Will also be used for Harness Project.
+          ui:field: RepoUrlPicker
+          pattern: '^github\.com\?owner\=([a-zA-Z][a-zA-Z0-9]*)\&repo\=([a-z][a-z0-9]*)(-[a-z][a-z0-9]+)*$'
+          ui:help: 'The repository name must be in lower-kebab-case. Only lowercase alphanumeric characters and dashes are allowed. A dash should not precede a number. A number cannot be the first symbol.'
+          ui:options:
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - workflow
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - relativityone
+        serviceDescription:
+          type: string
+          title: Service Description
+          ui:emptyValue: ''
+          ui:help: 'An apostrophe is NOT allowed in the service description.'
+          pattern: "^[^']*$"
+        namespace:
+          type: string
+          title: Namespace
+          description: Kubernetes namspace. If your team has an exisiting namspace your new service can be placed there. Otherwise, leave empty.
+          ui:emptyValue: ''
+        imageOs:
+          type: string
+          title: Image OS
+          description: What operating system the image will use.
+          enum: ["linux"]
+          default: "linux"
+    - title: Harness Project
+      description: This step allows you to either create your new service in a new project in NextGen Harness or create your service under an existing project. It is recommended to create additional services under the same project if they share similar technical contexts.
+      type: object
+      required:
+        - harness
+        - prodStrategy
+      properties:
+        harness:
+          title: The Project in NextGen Harness
+          type: string
+          description: Parameters defining whether you use an existing Harness project or create a new one.
+          enum:
+            - existingProject
+            - newProject
+          enumNames:
+            - 'Use an existing Harness project'
+            - 'Create a new Harness project'
+        prodStrategy:
+          title: Production Pipeline Deployment Strategy
+          type: string
+          description: Parameter defining whether to deploy to production clusters sequentially or in parallel.
+          enum:
+            - Sequence
+            - Parallel
+          enumNames:
+            - Deploy to production clusters sequentially
+            - Deploy to production clusters in parallel
+      dependencies:
+        harness:
+          oneOf:
+            - properties:
+                harness:
+                  enum:
+                    - existingProject
+                existingProjectName:
+                  type: "string"
+                  ui:field: SelectFieldFromApi
+                  ui:options:
+                    path: proxy/ngharness/projects?limit=1000&sort="name"
+                    valueSelector: 'project.identifier'
+                    labelSelector: 'project.name'
+                verifyProjectAccess:
+                  type: object
+                  title: "Verify Harness Project Access"
+                  description: |
+                    This template will not create Harness Pipelines **if you do not have access to the Harness Project** you wish to create a service under.
+
+                    Verify you have access to the Harness Project you selected by navigating to the NextGen Harness UI to see the projects you have access to.
+
+                    If you do not see the project listed, you will need to request access from the team that created the project first before proceeding.
+
+                    [View the Harness Projects I have access to](https://app.harness.io/ng/account/hW63Ny6rQaaGsKkVjE0pJA/home/projects/all)
+                verifyPermissions:
+                  type: array
+                  title: " "
+                  items:
+                    type: string
+                    enum:
+                      - verified
+                    enumNames:
+                      - 'I have verified that I have access to the existing Harness project selected'
+                  uniqueItems: true
+                  ui:widget: checkboxes
+              required:
+                - verifyPermissions
+                - existingProjectName
+            - properties:
+                harness:
+                  enum:
+                    - newProject
+                newProjectName:
+                  title: NextGen Project Name.
+                  type: "string"
+                  ui:help: 'The project name must be in lower_snake_case. Only lowercase alphanumeric characters and underscores are allowed. A underscore should not precede a number. A number cannot be the first symbol.'
+                  pattern: '^([a-z][a-z0-9]*)(_[a-z][a-z0-9]+)*$'
+              required:
+                - newProjectName
+    - title: System Information
+      description: Parameters defining the system in Backstage to associate this service with - services
+            that interact closely with each other should be grouped into a single
+            system. Standalone services can be their own system.
+      type: object
+      required:
+        - system
+      properties:
+        system:
+          title: The System in Backstage
+          type: string
+          description: Parameters defining either you use an existing system or create a new one.
+          enum:
+            - existingSystem
+            - newSystem
+          enumNames:
+            - 'Use an existing system'
+            - 'Create a new system'
+    # Creating a dependency based on the selected system above
+      dependencies:
+        system:
+          oneOf:
+            - properties:
+                system:
+                  enum:
+                    - existingSystem
+                existingSystemName:
+                  type: "string"
+                  ui:field: OwnedEntityPicker
+                  ui:options:
+                    allowedKinds:
+                      - System
+                    allowArbitraryValues:
+                      - true
+              required:
+                - existingSystemName
+            - properties:
+                system:
+                  enum:
+                    - newSystem
+                newSystemName:
+                  title: System Name
+                  type: "string"
+                  ui:help: 'The system name must be in lower-kebab-case. Only lowercase alphanumeric characters and dashes are allowed. A dash should not precede a number. A number cannot be the first symbol.'
+                  pattern: '^([a-z][a-z0-9]*)(-[a-z][a-z0-9]+)*$'
+                newSystemDescription:
+                  title: System Description
+                  type: "string"
+                  ui:help: 'Describe what type of services this system is for. An apostrophe is NOT allowed in the system description.'
+                  pattern: "^[^']*$"
+                newSystemLifecycle:
+                  title: System Lifecycle
+                  type: "string"
+                  enum:
+                    - experimental
+                    - production
+              required:
+                - newSystemName
+                - newSystemDescription
+                - newSystemLifecycle
+    - title: Repository ownership
+      description: Github team that owns this repository
+      type: object
+      required:
+        - repoOwner
+      properties:
+        repoOwner:
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: 'catalog/entity-facets'
+            params:
+              filter: 'kind=group,metadata.annotations.backstage.io/managed-by-origin-location=github-org:https://github.com/relativityone'
+              facet: 'metadata.name'
+            arraySelector: 'facets["metadata.name"]'
+            valueSelector: 'value'
+            labelSelector: 'value'
+    - title: Service ownership
+      description: Jira team that owns this service
+      type: object
+      required:
+        - teamID
+      properties:
+        teamID:
+          title: Jira Team
+          type: string
+          description: Jira team that owns this service.
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: 'catalog/entities'
+            params:
+              filter: kind=group,metadata.annotations.backstage.io/managed-by-origin-location=url:https://github.com/relativityone/backstage-imported-entities/blob/main/catalog-info.yaml
+              fields: 'metadata.name,metadata.title'
+            valueSelector: 'metadata.name'
+            labelSelector: 'metadata.title'
+    - title: Advanced Service Settings
+      description: Advanced Settings for more detailed configuration. This section is not required
+      type: object
+      properties:
+        replicaCount:
+          title: Replica Count
+          type: string
+          description: Minimum amount of replicas for autoscaling. Only set this value if you know resource constraints of your service.
+          ui:emptyValue: ''
+        requestedCpu:
+          title: Requested CPU
+          type: string
+          description: Number of CPUs that will be allocated to the container. Can be less than one, e.g. 0.25. Only set this value if you know resource constraints of your service.
+          ui:emptyValue: ''
+        requestedMemory:
+          title: Requested Memory
+          type: string
+          description: Memory that will be allocated to the container, use Mi for Mbs and Gi for Gbs e.g. 500Mi, 1Gi etc. Only set this value if you know resource constraints of your service.
+          ui:emptyValue: ''
+        limitCpu:
+          title: CPU limit
+          type: string
+          description: Container can pull more CPUs if available on the pod. This will limit CPUs to specified value, use Mi for Mbs and Gi for Gbs e.g. 500Mi, 1Gi etc. Only set this value if you know resource constraints of your service.
+          ui:emptyValue: ''
+        limitMemory:
+          title: Memory limit
+          type: string
+          description: Container can pull more memory if available on the pod. This will limit memory to specified value. Can be less than one, e.g. 0.25. Only set this value if you know resource constraints of your service.
+          ui:emptyValue: ''
+        useCustomDockerfile:
+          type: boolean
+          title: Use a custom Dockerfile
+          description: Provide a custom Dockerfile to be used while building the image. MUST select from a list of security approved base images.
+        publishNuGetPackage:
+          type: boolean
+          title: Publish a NuGet package for an SDK project.
+          description: If you have an SDK project with the 'IsPackable' property in the csproject file that you would like to publish to Artifactory, check this parameter. NOTE - This will require you to provide a key vault containing credentials for your Artifactory service account.
+      dependencies:
+        useCustomDockerfile:
+          required:
+          - baseImage
+          properties:
+            baseImage:
+              type: string
+              title: Base Image to use in Dockerfile
+              description: The base image to use in the dockerfile.
+              enum: [
+                "r1/base/security-alpine3:v3",
+                "r1/base/security-alpine-edge:v1",
+                "r1/base/security-ubuntu-20.04:v1",
+                "r1/base/security-nanoserver-1809:v1",
+                "r1/base/security-servercore-ltsc-2019:v1",
+                "r1/base/security-asp-net-4.8:v1"
+              ]
+        publishNuGetPackage:
+          required:
+          - keyVaultName
+          properties:
+            keyVaultName:
+              type: string
+              title: Name of key vault containing Artifactory credentials.
+              description: The name of a key vault containing two secrets - ArtifactoryUserName (the name of your Artifactory service account) and ArtifactoryAccessToken (the identity access token for the Artifactory service account).
+              ui:emptyValue: ''
+    - title: Integrations
+      description: Optional integrations to be added to the template
+      type: object
+      properties:
+        launchdarklyNote:
+          title: "LaunchDarkly"
+          description: |
+            We recommend that all new services use feature flags and leverage LaunchDarkly to manage their releases. See the *[How to adopt feature management](https://einstein.kcura.com/x/7xgtH)* page if you haven't already. To get you started, the template can set you up with a LaunchDarkly project for your application and install the recommended NuGet, [LaunchDarkly Extensions](https://github.com/relativityone/launchdarkly-extensions#how-to-start).
+
+            If your team has not used LaunchDarkly before, one person will be required to complete the Bronze level course at [LaunchDarkly Academy](https://academy.launchdarkly.com/). Upon completion, please email the certificate to help-toggles@relativity.com.
+          type: object
+        launchdarkly:
+          title: "Do you want to integrate with LaunchDarkly?"
+          type: string
+          oneOf:
+            - title: "Yes, please create a new LaunchDarkly project"
+              const: newProject
+            - title: "Yes, I already have a project I am going to use"
+              const: existingProject
+            - title: "No, do not integrate with LaunchDarkly for now"
+              const: none
+          default: newProject
+  steps:
+    - id: verify-if-project-exists
+      if: ${{ parameters.newProjectName }}
+      name: Verify if Harness Project already exists
+      action: http:backstage:request
+      input:
+        method: GET
+        path: proxy/ngharness/projects?limit=1000
+
+    - id: jsonata-harness-project
+      if: ${{ parameters.newProjectName }}
+      name: Parse http Backstage response
+      action: roadiehq:utils:jsonata
+      input:
+        data: ${{ steps["verify-if-project-exists"].output.body }}
+        expression: '"${{ parameters.newProjectName }}" in $spread($.project.name)'
+
+    - id: verify-if-system-exists
+      if: ${{ parameters.newSystemName }}
+      name: Verify if a new system already exists
+      action: http:backstage:request
+      input:
+        method: GET
+        path: catalog/entities?filter=kind=system,metadata.name=${{ parameters.newSystemName }}
+
+    - id: jsonata
+      if: ${{ parameters.newSystemName }}
+      name: Parse http Backstage response
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          items:
+            - ${{ steps["verify-if-system-exists"].output.body }}
+        expression: '$boolean(items)'
+
+    - id: dump-parameters
+      name: Dump Parameters
+      action: debug:log
+      input:
+        message: |
+          parameters...
+          userEmail: ${{ user.entity.spec.profile.email }}
+          repoUrl: ${{ parameters.repoUrl }}
+          repoOrg: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}
+          repoOwner: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoOwner }}
+          teamID: ${{ parameters.teamID }}
+          serviceName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          rootNamespace: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-",".") | lower | capitalize }}
+          serviceDescription: ${{ parameters.serviceDescription }}
+          keyVaultName: ${{ parameters.keyVaultName }}
+          imageOs: ${{ parameters.imageOs }}
+          newProjectName: ${{ parameters.newProjectName }}
+          existingProjectName: ${{ parameters.existingProjectName }}
+          Response on the http Backstage request to verify if the Harness project already exists...
+          newProjectExists: ${{ steps["jsonata-harness-project"].output.result }}
+          prodStrategy: ${{ parameters.prodStrategy }}
+          system: ${{ "system:default/" + parameters.newSystemName if parameters.newSystemName else parameters.existingSystemName }}
+          Response on the http Backstage request to verify if the system ${{ parameters.newSystemName }} already exists...
+          newSystemExists: ${{ steps["jsonata"].output.result }}
+          newSystemDescription: ${{ parameters.newSystemDescription if parameters.newSystemDescription else ""}}
+          newSystemLifecycle: ${{ parameters.newSystemLifecycle if parameters.newSystemLifecycle else ""}}
+          Advanced...
+          namespace: ${{ parameters.namespace }}
+          replicaCount: ${{ parameters.replicaCount }}
+          requestedCpu: ${{ parameters.requestedCpu }}
+          requestedMemory: ${{ parameters.requestedMemory }}
+          limitCpu: ${{ parameters.limitCpu }}
+          limitMemory: ${{ parameters.limitMemory }}
+          useCustomDockerfile: ${{ parameters.useCustomDockerfile }}
+          baseImage: ${{ parameters.baseImage }}
+          launchdarkly: ${{ parameters.launchdarkly }}
+        listWorkspace: false
+
+    - id: warning
+      if: ${{ steps["jsonata-harness-project"].output.result }}
+      name: IMPORTANT - ACTION REQUIRED | READ MESSAGE
+      action: debug:log
+      input:
+        message: |
+          Harness Project with name ${{ parameters.newProjectName }} already exists. Start over, select existing Harness Project name or create a new name.
+
+    - id: fetch-skeleton
+      if: ${{ parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false }}
+      name: Fetch Template Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        targetPath: ./new-repo
+        templateFileExtension: '.njk'
+        values:
+          serviceName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          rootNamespace: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-",".") | lower | capitalize }}
+          userEmail: ${{ user.entity.spec.profile.email }}
+          imageOs: ${{ parameters.imageOs }}
+          keyVaultName: ${{ parameters.keyVaultName }}
+          publishNuGetPackage: ${{ parameters.publishNuGetPackage }}
+          namespace: ${{ parameters.namespace if parameters.namespace else "r1-play" }}
+          teamID: ${{ parameters.teamID }}
+          teamOwner: ${{ parameters.repoOwner }}
+          newProjectName: ${{ parameters.newProjectName }}
+          existingProjectName: ${{ parameters.existingProjectName }}
+          projectName: ${{ parameters.existingProjectName if parameters.existingProjectName else parameters.newProjectName }}
+          system: ${{ "system:default/" + parameters.newSystemName if parameters.newSystemName else parameters.existingSystemName }}
+          newSystemName: ${{ parameters.newSystemName }}
+          newSystemExists: ${{ steps["jsonata"].output.result }}
+          newSystemDescription: ${{ parameters.newSystemDescription if parameters.newSystemDescription else ""}}
+          newSystemLifecycle: ${{ parameters.newSystemLifecycle if parameters.newSystemLifecycle else ""}}
+          serviceDescription: ${{ parameters.serviceDescription }}
+          assemblyName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          repoOwner: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoOwner }}
+          repoOrg: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}
+          replicaCount: ${{ parameters.replicaCount }}
+          requestedCpu: ${{ parameters.requestedCpu }}
+          requestedMemory: ${{ parameters.requestedMemory }}
+          limitCpu: ${{ parameters.limitCpu }}
+          limitMemory: ${{ parameters.limitMemory }}
+          useCustomDockerfile: ${{ "true" if parameters.useCustomDockerfile else "false"}}
+          baseImage: ${{ parameters.baseImage if parameters.baseImage else "" }}
+          strategy: ${{ parameters.prodStrategy }}
+          launchdarkly: ${{ parameters.launchdarkly }}
+
+    - id: rename-service-folder
+      if: ${{ parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false }}
+      name: Rename service helm chart folder
+      action: fs:rename
+      input:
+        files:
+          - from: new-repo/Source/K8s/helm-charts/serviceName
+            to: new-repo/Source/K8s/helm-charts/${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+
+    - id: rename-harness-files
+      if: ${{ parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false }}
+      name: Rename Harness files
+      action: fs:rename
+      input:
+        files:
+          - from: new-repo/.harness/Deploy_Service.yaml
+            to: new-repo/.harness/Deploy_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}.yaml
+          - from: new-repo/.harness/Deploy_Dev_Service_Input.yaml
+            to: new-repo/.harness/Deploy_Dev_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_Input.yaml
+          - from: new-repo/.harness/Deploy_Reg_Service_Input.yaml
+            to: new-repo/.harness/Deploy_Reg_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_Input.yaml
+          - from: new-repo/.harness/Promote_Service_Image.yaml
+            to: new-repo/.harness/Promote_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_Image.yaml
+          - from: new-repo/.harness/Promote_Reg_Service_Image_Input.yaml
+            to: new-repo/.harness/Promote_Reg_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_Image_Input.yaml
+          - from: new-repo/.harness/Remove_Service.yaml
+            to: new-repo/.harness/Remove_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}.yaml
+          - from: new-repo/.harness/Remove_Dev_Service_Input.yaml
+            to: new-repo/.harness/Remove_Dev_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_Input.yaml
+          - from: new-repo/.harness/Deploy_Service_to_Production.yaml
+            to: new-repo/.harness/Deploy_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_to_Production.yaml
+          - from: new-repo/.harness/Deploy_Service_to_Production_Input.yaml
+            to: new-repo/.harness/Deploy_${{ parameters.repoUrl | replace(r/.*repo=/, "") | replace("-","_") | lower }}_to_Production_Input.yaml
+
+    - id: dump-workspace
+      if: ${{ parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false }}
+      name: Dump Workspace
+      action: debug:log
+      input:
+        message: workspace contents...
+        listWorkspace: true
+
+    - id: publish
+      if: ${{ parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false }}
+      name: Publish
+      action: publish:github
+      input:
+        sourcePath: new-repo
+        allowedHosts: ['github.com']
+        description: ${{ parameters.description }}
+        repoUrl: ${{ parameters.repoUrl }}
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+        access: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoOwner }}
+        requireCodeOwnerReviews: true
+        repoVisibility: internal
+        defaultBranch: main
+        deleteBranchOnMerge: true
+        allowMergeCommit: true
+        allowSquashMerge: true
+        allowRebaseMerge: true
+        gitCommitMessage: '[skip actions]'
+        collaborators:
+          - user: k8s-gh-svc
+            access: maintain
+        topics: ['tmpl-dotnet-microservice', 'dotnet']
+
+    - action: github:actions:dispatch
+      if: ${{ parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false }}
+      id: trigger-build
+      name: Trigger Build
+      input:
+        repoUrl: "github.com?repo=shipyard&owner=relativityone"
+        workflowId: "28122275"
+        branchOrTagName: "DEVOPS-199672-JobDuration"
+        workflowInputs:
+          repo_args: |
+            {
+              "NEW_REPO_NAME": "${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoUrl | replace(r/.*repo=/, "") }}",
+              "SERVICE_NAME": "${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}",
+              "USER_EMAIL": "${{ user.entity.spec.profile.email }}",
+              "TEAM_ID": "${{ parameters.teamID }}",
+              "TEAM_OWNER": "${{ parameters.repoOwner }}",
+              "SERVICE_DESCRIPTION": "${{ parameters.serviceDescription | replace("'","''") }}",
+              "OS_IMAGE": "${{ parameters.imageOs }}",
+              "USE_CUSTOM_DOCKERFILE": "${{ "true" if parameters.useCustomDockerfile else "false"}}",
+              "BASE_IMAGE": "${{ parameters.baseImage if parameters.baseImage else "" }}",
+              "K8S_NAMESPACE": "${{ parameters.namespace if parameters.namespace else "r1-play" }}",
+              "HARNESS_PROJECT_NAME": "${{ parameters.existingProjectName if parameters.existingProjectName else parameters.newProjectName }}",
+              "USE_EXISTING_HARNESS_PROJECT": "${{ "true" if parameters.existingProjectName else "false" }}",
+              "USE_LAUNCHDARKLY": "${{ "true" if parameters.launchdarkly == 'newProject' or parameters.launchdarkly == 'existingProject' else "false" }}"
+            }
+
+    - id: keyvault-access
+      if: ${{ parameters.publishNuGetPackage }}
+      action: debug:log
+      name: IMPORTANT - ACTION REQUIRED | Key Vault Access
+      input:
+        message: |
+          Please give the 'k8s-framework-sp' service principal (application ID f75080c6-888c-4597-b498-76180b54386c) get,list secret privileges to the given key vault storing Artifactory credentials, ${{ parameters.keyVaultName }}.
+
+    - action: http:backstage:request
+      if: ${{ (parameters.existingProjectName or steps["jsonata-harness-project"].output.result === false) and parameters.launchdarkly == 'newProject' }}
+      id: get-jira-team
+      name: Get JIRA Team
+      input:
+        method: GET
+        path: catalog/entities/by-name/group/default/${{ parameters.teamID }}
+
+    - id: jira-team-not-found
+      if: ${{ steps["get-jira-team"].output and steps["get-jira-team"].output.code !== 200 }}
+      name: IMPORTANT - ACTION REQUIRED | READ MESSAGE
+      action: debug:log
+      input:
+        message: |
+          Failed to fetch the JIRA team '${{ parameters.teamID }}'. Status code: ${{ steps["get-jira-team"].output.code }}.
+
+    - action: github:actions:dispatch
+      if: ${{ steps["get-jira-team"].output and steps["get-jira-team"].output.code === 200 }}
+      id: create-ld-project
+      name: Create LaunchDarkly Project
+      input:
+        repoUrl: "github.com?repo=launchdarkly-iac&owner=relativityone"
+        workflowId: "72156500"
+        branchOrTagName: "main"
+        workflowInputs:
+          projectName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          serviceName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          teamName: ${{ steps["get-jira-team"].output.body.metadata.title }}
+          teamJiraKey: ${{ parameters.teamID | upper }}
+          teamMaintainerEmailAddress: ${{ user.entity.spec.profile.email }}
+
+    - id: finish-template-run
+      name: Template Run Completed!
+      action: debug:log
+      input:
+        message: |
+          The template run has completed, please check the status of the repository setup workflow linked below to see if it was successful.
+  output:
+    links:
+      - title: View this repository in GitHub
+        url: ${{ steps.publish.output.remoteUrl }} # link to the remote repository
+      - title: Check the status of the repository setup workflow
+        description: The link to the workflow finishing setup for your new repository. Click on the newest run in progress to view the workflow run.
+        url: 'https://github.com/relativityone/shipyard/actions/workflows/update-new-repo.yaml'
+      - title: View Service in Catalog
+        icon: catalog
+        url: https://relativity.roadie.so/catalog/default/component/${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+
+---
+
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: add-prod-harness-files
+  title: Add production Harness resource files to existing repository.
+  description: Adds the production pipeline and input set files to the specified repository's .harness folder.
+spec:
+  owner: ptci-1599
+  type: repository
+
+  parameters:
+    - title: Service Information
+      type: object
+      required:
+        - serviceName
+      properties:
+        serviceName:
+          title: Name of your microservice
+          type: string
+          description: The name of your microservice, found in your values.yaml file.
+    - title: PR Data
+      type: object
+      required:
+        - repoUrl
+        - pr_branch
+      properties:
+        repoUrl:
+          type: string
+          title: Repository Name
+          description: name (in lower-kebab-case) used for the repository. Will also be used for Harness Project.
+          ui:field: RepoUrlPicker
+          pattern: '^github\.com\?owner\=([a-zA-Z][a-zA-Z0-9]*)\&repo\=([a-z][a-z0-9]*)(-[a-z][a-z0-9]+)*$'
+          ui:help: 'The repository name must be in lower-kebab-case. Only lowercase alphanumeric characters and dashes are allowed. A dash should not precede a number. A number cannot be the first symbol.'
+          ui:options:
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - workflow
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - relativityone
+        pr_branch:
+          title: PR Branch
+          type: string
+          description: The new branch to make a pr from
+    - title: Harness resource options
+      type: object
+      required:
+        - projectName
+        - pipelineType
+      properties:
+        projectName:
+          title: Name of your Harness project
+          type: string
+          description: 'The name of your existing Harness project'
+        pipelineType:
+          title: Type of pipeline (parallel or sequential)
+          type: string
+          description: Parameter defining whether you want your production deploy pipeline to deploy to all environments in parallel, or sequentially.
+          enum:
+            - Parallel
+            - Sequence
+          enumNames:
+            - 'Deploy to all production environments in parallel'
+            - 'Deploy to production environments sequentially'
+
+  steps:
+    #       strategy: ${{ parameters.pipelineType}}
+    - id: fetch-harness-files
+      name: Fetch Harness Files
+      action: fetch:template
+      input:
+        url: ./skeleton/.harness/
+        targetPath: ./new-repo/temp/
+        templateFileExtension: '.njk'
+        values:
+          serviceName: ${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}
+          projectName: ${{ parameters.projectName | replace("-","_") | replace(" ","_") }}
+          strategy: ${{ parameters.pipelineType}}
+    - id: move-files
+      name: Move production files
+      action: fs:rename
+      input:
+        files:
+          - from: ./new-repo/temp/Deploy_Service_to_Production.yaml
+            to: ./new-repo/.harness/Deploy_${{ parameters.serviceName | replace("-","_")  }}_to_Production.yaml
+          - from: ./new-repo/temp/Deploy_Service_to_Production_Input.yaml
+            to: ./new-repo/.harness/Deploy_${{ parameters.serviceName | replace("-","_")  }}_to_Production_Input.yaml
+    - id: dump-parameters
+      name: Dump Parameters
+      action: debug:log
+      input:
+        message: |
+          repoUrl: ${{ parameters.repoUrl }}
+          repoOrg: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}
+          repoName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          repoFull: https://github.com/${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+        listWorkspace: true
+    - id: publish-pr
+      name: Publish PR
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName:  ${{ parameters.pr_branch }}
+        title: Add production Harness pipeline resources
+        description: AUTOMATED PR - Adding production Harness pipeline resources to ${{ parameters.repoUrl }}
+        sourcePath: new-repo/.harness/
+        targetPath: .harness/
+    - id: log-message
+      name: Log PR URL
+      action: debug:log
+      input:
+        message: 'PR url: ${{ steps["publish-pr"].output.remoteUrl }}'
+
+---
+
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: migrate-s2-service-template-test
+  title: TEST DO NOT USE - Migrate S2 Service to .NET Microservice CI/CD
+  description: Configures an existing S2 service in GitHub to use the new .NET microservice CI/CD process.
+spec:
+  owner: ptci-1599
+  type: repository
+
+  parameters:
+    - title: Service Information
+      type: object
+      required:
+        - serviceName
+      properties:
+        serviceName:
+          title: Name of your microservice
+          type: string
+          description: The name of your microservice, found in your values.yaml file.
+    - title: PR Data
+      type: object
+      required:
+        - repoUrl
+        - pr_branch
+      properties:
+        repoUrl:
+          type: string
+          title: Repository Name
+          description: name (in lower-kebab-case) of the existing GitHub repository containing your S2 service migrated from BitBucket.
+          ui:field: RepoUrlPicker
+          pattern: '^github\.com\?owner=([a-zA-Z][a-zA-Z0-9]*)&repo=([a-z][a-z0-9]*)(-[a-z][a-z0-9]+)*$'
+          ui:help: 'The repository name must be in lower-kebab-case. Only lowercase alphanumeric characters and dashes are allowed. A dash should not precede a number. A number cannot be the first symbol.'
+          ui:options:
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - workflow
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - relativityone
+        pr_branch:
+          title: PR Branch
+          type: string
+          description: The new branch to make a pr from
+    - title: Harness resource options
+      type: object
+      required:
+        - projectName
+        - pipelineType
+      properties:
+        projectName:
+          title: Name of your Harness project
+          type: string
+          description: 'The name of your existing Harness project. This will be the same as the name of the CurrentGen Harness application your CD resources existed in before migration.'
+        pipelineType:
+          title: Type of pipeline (parallel or sequential)
+          type: string
+          description: Parameter defining whether you want your production deploy pipeline to deploy to all environments in parallel, or sequentially.
+          enum:
+            - Parallel
+            - Sequence
+          enumNames:
+            - 'Deploy to all production environments in parallel'
+            - 'Deploy to production environments sequentially'
+    - title: Repository ownership
+      description: Github team that owns this repository
+      type: object
+      required:
+        - repoOwner
+      properties:
+        repoOwner:
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: 'catalog/entity-facets'
+            params:
+              filter: 'kind=group,metadata.annotations.backstage.io/managed-by-origin-location=github-org:https://github.com/relativityone'
+              facet: 'metadata.name'
+            arraySelector: 'facets["metadata.name"]'
+            valueSelector: 'value'
+            labelSelector: 'value'
+    - title: Additional Microservice Features
+      type: object
+      description: (Optional) New features in the .NET microservice template, such as authentication, observability, and swagger.
+      properties:
+        addOberservability:
+          type: boolean
+          title: Add Observability
+          description: If you would like to add observability to your microservice, check this parameter.
+        addAuthentication:
+          type: boolean
+          title: Add Authentication
+          description: If you would like to add authentication to your microservice, check this parameter.
+        addSwagger:
+          type: boolean
+          title: Add Swagger
+          description: If you would like to add swagger to your microservice, check this parameter.
+    - title: Publish an SDK Package
+      type: object
+      description: (Optional) If your project includes an SDK style project you would like to publish to Artifactory.
+      properties:
+        publishNuGetPackage:
+          type: boolean
+          title: Publish a NuGet package for an SDK project.
+          description: If you have an SDK project with the 'IsPackable' property in the csproject file that you would like to publish to Artifactory, check this parameter. NOTE - This will require you to provide a key vault containing credentials for your Artifactory service account.
+      dependencies:
+        publishNuGetPackage:
+          oneOf:
+            - required:
+                - keyVaultName
+              properties:
+                publishNuGetPackage:
+                  const: true
+                keyVaultName:
+                  type: string
+                  title: Name of key vault containing Artifactory credentials.
+                  description: The name of a key vault containing two secrets - ArtifactoryUserName (the name of your Artifactory service account) and ArtifactoryAccessToken (the identity access token for the Artifactory service account).
+                  ui:emptyValue: ''
+            - properties:
+                publishNuGetPackage:
+                  const: false
+
+  steps:
+    - id: fetch-github-workflow-files
+      name: Fetch GitHub Workflow Files
+      action: fetch:template
+      input:
+        url: ./skeleton/.github
+        targetPath: ./new-repo/.github
+        templateFileExtension: '.njk'
+        values:
+          serviceName: ${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}
+          projectName: ${{ parameters.projectName | replace("-","_") | replace(" ","_") }}
+          namespace: ${{ parameters.namespace }}
+          publishNuGetPackage: ${{ parameters.publishNuGetPackage  }}
+          keyVaultName: ${{ parameters.keyVaultName }}
+          repoOwner: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoOwner }}
+    - id: fetch-harness-files
+      name: Fetch Harness Files
+      action: fetch:template
+      input:
+        url: ./skeleton/.harness/
+        targetPath: ./new-repo/temp/
+        templateFileExtension: '.njk'
+        values:
+          serviceName: ${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}
+          projectName: ${{ parameters.projectName | replace("-","_") | replace(" ","_") }}
+          strategy: ${{ parameters.pipelineType}}
+
+    - id: rename-harness-files
+      name: Rename Harness files
+      action: fs:rename
+      input:
+        files:
+          - from: new-repo/temp/Deploy_Service.yaml
+            to: new-repo/.harness/Deploy_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}.yaml
+          - from: new-repo/temp/Deploy_Dev_Service_Input.yaml
+            to: new-repo/.harness/Deploy_Dev_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_Input.yaml
+          - from: new-repo/temp/Deploy_Reg_Service_Input.yaml
+            to: new-repo/.harness/Deploy_Reg_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_Input.yaml
+          - from: new-repo/temp/Promote_Service_Image.yaml
+            to: new-repo/.harness/Promote_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_Image.yaml
+          - from: new-repo/temp/Promote_Reg_Service_Image_Input.yaml
+            to: new-repo/.harness/Promote_Reg_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_Image_Input.yaml
+          - from: new-repo/temp/Remove_Service.yaml
+            to: new-repo/.harness/Remove_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}.yaml
+          - from: new-repo/temp/Remove_Dev_Service_Input.yaml
+            to: new-repo/.harness/Remove_Dev_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_Input.yaml
+          - from: new-repo/temp/Deploy_Service_to_Production.yaml
+            to: new-repo/.harness/Deploy_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_to_Production.yaml
+          - from: new-repo/temp/Deploy_Service_to_Production_Input.yaml
+            to: new-repo/.harness/Deploy_${{ parameters.serviceName | replace("-","_") | replace(" ","_")  }}_to_Production_Input.yaml
+
+
+    - id: dump-parameters
+      name: Dump Parametersss
+      action: debug:log
+      input:
+        message: |
+          repoUrl: ${{ parameters.repoUrl }}
+          repoOrg: ${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}
+          repoName: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          repoFull: https://github.com/${{ parameters.repoUrl | replace(r/.*owner=/, "") | replace(r/&repo=.*/, "") }}/${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+        listWorkspace: true
+
+    - id: keyvault-access
+      if: ${{ parameters.publishNuGetPackage }}
+      action: debug:log
+      name: IMPORTANT - ACTION REQUIRED | Key Vault Access
+      input:
+        message: |
+          Please give the 'k8s-framework-sp' service principal (application ID f75080c6-888c-4597-b498-76180b54386c) get,list secret privileges to the given key vault storing Artifactory credentials, ${{ parameters.keyVaultName }}.
+
+    - id: publish-pr
+      name: Publish PR
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName:  automated/migrate-s2-service
+        title: Complete Migration of ${{ parameters.serviceName }} to .NET Microservice CI/CD
+        description: AUTOMATED PR - Migrating ${{ parameters.serviceName }} to .NET Microservice CI/CD
+        sourcePath: new-repo/
+        targetPath: .
+    - id: log-message
+      name: Log PR URL
+      action: debug:log
+      input:
+        message: 'PR url: ${{ steps["publish-pr"].output.remoteUrl }}'
+
+    - action: github:actions:dispatch
+      id: run-migrate-s2-workflow
+      name: Start Migrate S2 GitHub Workflow
+      input:
+        repoUrl: "github.com?repo=shipyard&owner=relativityone"
+        workflowId: "79065952"
+        branchOrTagName: "main"
+        workflowInputs:
+          new_repo_name: ${{ parameters.repoUrl | replace(r/.*repo=/, "") | lower }}
+          service_name: ${{ parameters.serviceName }}
+          harness_project_name: ${{ parameters.projectName | replace("-","_") | replace(" ","_") }}
+          branch_name: ${{ parameters.pr_branch }}
+          add_observability: ${{ parameters.addOberservability }}
+          add_authentication: ${{ parameters.addAuthentication }}
+          add_swagger: ${{ parameters.addSwagger }}
