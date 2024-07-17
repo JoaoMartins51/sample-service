@@ -10,7 +10,7 @@ spec:
   type: type1
   owner: team-a
   dependsOn:
-    - resource-2
+    - resource:resource-2
 
 ---
 
@@ -26,7 +26,7 @@ spec:
   type: type2
   owner: team-b
   dependsOn:
-    - resource-3
+    - resource:resource-3
 
 ---
 
@@ -42,7 +42,7 @@ spec:
   type: type3
   owner: team-c
   dependsOn:
-    - resource-4
+    - resource:resource-4
 
 ---
 
@@ -58,7 +58,7 @@ spec:
   type: type4
   owner: team-d
   dependsOn:
-    - resource-5
+    - resource:resource-5
 
 ---
 
@@ -74,4 +74,3 @@ spec:
   type: type5
   owner: team-e
   dependsOn: []
-
