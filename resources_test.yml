@@ -1,0 +1,77 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: resource-1
+  description: This is the first resource
+  tags:
+    - example
+    - resource
+spec:
+  type: type1
+  owner: team-a
+  dependsOn:
+    - resource-2
+
+---
+
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: resource-2
+  description: This is the second resource
+  tags:
+    - example
+    - resource
+spec:
+  type: type2
+  owner: team-b
+  dependsOn:
+    - resource-3
+
+---
+
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: resource-3
+  description: This is the third resource
+  tags:
+    - example
+    - resource
+spec:
+  type: type3
+  owner: team-c
+  dependsOn:
+    - resource-4
+
+---
+
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: resource-4
+  description: This is the fourth resource
+  tags:
+    - example
+    - resource
+spec:
+  type: type4
+  owner: team-d
+  dependsOn:
+    - resource-5
+
+---
+
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: resource-5
+  description: This is the fifth resource
+  tags:
+    - example
+    - resource
+spec:
+  type: type5
+  owner: team-e
+  dependsOn: []
+
