@@ -23,6 +23,7 @@ metadata:
     datadoghq.com/tag-name: sample-service
     datadoghq.com/slo_tag: service:tutorial-slo-api
     datadoghq.com/monitor_tags: sample-service
+    sonarqube.org/project-key: testing-service
 spec:
   type: service
   owner: sample-team
@@ -39,6 +40,12 @@ kind: Component
 metadata:
   name: sample-service-trigger
   description: Push jobs onto a globally available shared queue.
+annotations:
+    github.com/project-slug: JoaoMartins51/sample-service
+    datadoghq.com/tag-name: sample-service
+    datadoghq.com/slo_tag: service:tutorial-slo-api
+    datadoghq.com/monitor_tags: sample-service
+    sonarqube.org/project-key: testing-service
 spec:
   type: library
   lifecycle: production
