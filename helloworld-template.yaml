@@ -1,0 +1,70 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: hello-world-template
+  title: Hello World Template
+  description: A simple scaffolder template that creates a Hello World project.
+  tags:
+    - hello
+    - world
+spec:
+  owner: backstage-user@example.com
+  type: service
+  parameters:
+    - title: Project Information
+      properties:
+        name:
+          title: Project Name
+          type: string
+          description: The name of your new Hello World project.
+          ui:field: TextInput
+          ui:placeholder: my-hello-world-project
+        description:
+          title: Project Description
+          type: string
+          description: A short description of your Hello World project.
+          ui:field: TextInput
+          ui:placeholder: This is my Hello World project.
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./template
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        repoUrl: https://github.com/${{ parameters.owner }}/${{ parameters.name }}
+        defaultBranch: main
+        files:
+          - path: /
+            contents: .
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: https://github.com/${{ parameters.owner }}/${{ parameters.name }}/blob/main/catalog-info.yaml
+        catalogInfo:
+          apiVersion: backstage.io/v1alpha1
+          kind: Component
+          metadata:
+            name: ${{ parameters.name }}
+            description: ${{ parameters.description }}
+            owner: ${{ parameters.owner }}
+          spec:
+            type: service
+            lifecycle: experimental
+            owner: ${{ parameters.owner }}
+
+  output:
+    links:
+      - title: Repository
+        url: https://github.com/${{ parameters.owner }}/${{ parameters.name }}
+
