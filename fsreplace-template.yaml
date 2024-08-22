@@ -36,5 +36,4 @@ spec:
         search: ${{ parameters.searchValue }}
         replace: ${{ parameters.replaceValue }}
   output:
-    summary:
-      - text: "The file content was successfully updated."
+    summary: "The file content was successfully updated."
