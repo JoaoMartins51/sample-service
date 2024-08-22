@@ -30,7 +30,7 @@ spec:
   steps:
     - id: replaceContent
       name: Replace File Content
-      action: fs:replace
+      action: roadiehq:utils:fs:replace
       input:
         path: ${{ parameters.filePath }}
         search: ${{ parameters.searchValue }}
