@@ -1,0 +1,40 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-fs-replace
+  title: Test FS Replace Action
+  description: A template to test the fs:replace action.
+spec:
+  owner: backstage/techdocs-core
+  type: service
+  parameters:
+    - title: File Replacement Information
+      required:
+        - filePath
+        - searchValue
+        - replaceValue
+      properties:
+        filePath:
+          title: File Path
+          type: string
+          description: The path to the file where the replacement should occur.
+          ui:autofocus: true
+        searchValue:
+          title: Search Value
+          type: string
+          description: The string to search for in the file.
+        replaceValue:
+          title: Replace Value
+          type: string
+          description: The string to replace the search value with.
+  steps:
+    - id: replaceContent
+      name: Replace File Content
+      action: fs:replace
+      input:
+        path: ${{ parameters.filePath }}
+        search: ${{ parameters.searchValue }}
+        replace: ${{ parameters.replaceValue }}
+  output:
+    summary:
+      - text: "The file content was successfully updated."
