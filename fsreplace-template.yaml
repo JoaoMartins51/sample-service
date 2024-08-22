@@ -32,9 +32,9 @@ spec:
       name: Replace File Content
       action: roadiehq:utils:fs:replace
       input:
-      files:
-        - file: ${{ parameters.filePath }}
-          find: ${{ parameters.searchValue }}
-          replaceWith: ${{ parameters.replaceValue }}
+        files:
+          - file: ${{ parameters.filePath }}
+            find: ${{ parameters.searchValue }}
+            replaceWith: ${{ parameters.replaceValue }}
   output:
     summary: "The file content was successfully updated."
