@@ -1,0 +1,36 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: fetch-repo-info
+  title: Fetch GitHub Repository Information
+  description: This template fetches information about a GitHub repository.
+  tags:
+    - github
+    - repository
+spec:
+  owner: default
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - owner
+        - repo
+      properties:
+        owner:
+          title: GitHub Owner/Organization
+          type: string
+          description: The GitHub owner or organization name.
+        repo:
+          title: GitHub Repository Name
+          type: string
+          description: The name of the repository.
+
+  steps:
+    - id: fetch-repo
+      name: Fetch GitHub Repository Information
+      action: fetch:plain
+      input:
+        url: 'https://api.github.com/repos/{{ parameters.owner }}/{{ parameters.repo }}'
+      output:
+       
