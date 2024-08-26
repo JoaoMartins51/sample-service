@@ -55,7 +55,7 @@ spec:
       input:
         allowedHosts: ['github.com']
         description: 'A static HTML website. Just like the good old days.'
-        repoUrl: github.com
+        repoUrl: 'https://github.com/{{ parameters.owner }}/{{ parameters.repo }}'
         defaultBranch: version2
         repoVisibility: public
         
