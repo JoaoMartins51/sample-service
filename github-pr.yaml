@@ -1,0 +1,70 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-github-repo
+  title: Create a GitHub Repository
+  description: This template creates a new GitHub repository with a README.md file.
+  tags:
+    - github
+    - repository
+spec:
+  owner: default
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - owner
+        - repo
+        - description
+        - visibility
+      properties:
+        owner:
+          title: GitHub Owner/Organization
+          type: string
+          description: The GitHub owner or organization name.
+        repo:
+          title: Repository Name
+          type: string
+          description: The name of the repository to create.
+        description:
+          title: Repository Description
+          type: string
+          description: A brief description of the repository.
+        visibility:
+          title: Repository Visibility
+          type: string
+          enum:
+            - public
+            - private
+          description: The visibility of the repository.
+
+    - title: README Content
+      required:
+        - readme_content
+      properties:
+        readme_content:
+          title: README.md Content
+          type: string
+          description: The content to be included in the README.md file.
+
+  steps:
+    - id: create-repo
+      name: Create GitHub Repository
+      action: github:repo:create
+      input:
+        owner: '{{ parameters.owner }}'
+        repo: '{{ parameters.repo }}'
+        description: '{{ parameters.description }}'
+        visibility: '{{ parameters.visibility }}'
+
+    - id: create-readme
+      name: Create README.md
+      action: github:push
+      input:
+        owner: '{{ parameters.owner }}'
+        repo: '{{ parameters.repo }}'
+        branch: 'main'
+        filepaths:
+          - path: 'README.md'
+            content: '{{ parameters.readme_content }}'
