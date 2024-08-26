@@ -31,6 +31,6 @@ spec:
       name: Fetch GitHub Repository Information
       action: fetch:plain
       input:
-        url: 'https://api.github.com/repos/{{ parameters.owner }}/{{ parameters.repo }}'
+        url: 'https://roadie-preview.roadie.so/api/proxy/mygithub/api/repos/{{ parameters.owner }}/{{ parameters.repo }}'
       output:
        
