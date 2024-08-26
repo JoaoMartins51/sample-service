@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: create-github-repo
-  title: Create a GitHub Repository
+  title: Create a GitHub Repository with README.md
   description: This template creates a new GitHub repository with a README.md file.
   tags:
     - github
@@ -50,14 +50,15 @@ spec:
 
   steps:
     - id: create-repo
-      name: Create GitHub Repository
-      action: github:repo:create
+      name: Publish to GitHub
+      action: publish:github
       input:
-        owner: '{{ parameters.owner }}'
-        repo: '{{ parameters.repo }}'
+        repoUrl: 'https://github.com/{{ parameters.owner }}/{{ parameters.repo }}'
         description: '{{ parameters.description }}'
         visibility: '{{ parameters.visibility }}'
-
+        sourcePath: '.'
+        token: '{{ secrets.GITHUB_TOKEN }}'
+        
     - id: create-readme
       name: Create README.md
       action: github:push
