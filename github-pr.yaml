@@ -18,6 +18,7 @@ spec:
         - repo
         - description
         - visibility
+        - repoUrl
       properties:
         owner:
           title: GitHub Owner/Organization
@@ -38,6 +39,13 @@ spec:
             - public
             - private
           description: The visibility of the repository.
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
 
     - title: README Content
       required:
@@ -55,7 +63,7 @@ spec:
       input:
         allowedHosts: ['github.com']
         description: 'A static HTML website. Just like the good old days.'
-        repoUrl: github.com/${{ parameters.owner }}/${{ parameters.repo }}
+        repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: version2
         repoVisibility: public
         
