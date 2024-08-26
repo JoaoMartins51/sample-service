@@ -53,10 +53,11 @@ spec:
       name: Publish to GitHub
       action: publish:github
       input:
-        repoUrl: 'http://github.com/{{ parameters.owner }}/{{ parameters.repo }}'
-        description: '{{ parameters.description }}'
-        visibility: '{{ parameters.visibility }}'
-        sourcePath: '.'
+        allowedHosts: ['github.com']
+        description: 'A static HTML website. Just like the good old days.'
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: version2
+        repoVisibility: public
         
     - id: create-readme
       name: Create README.md
