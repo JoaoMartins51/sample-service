@@ -21,4 +21,4 @@ spec:
       name: Log Message
       action: debug:log
       input:
-        message: 'Hello, ${{ user }}!'
+        message: 'Hello, ${{ user.ref }} - ${{ user.entity.metadata.name }} - ${{ user.entity.spec.profile.email }}!'
