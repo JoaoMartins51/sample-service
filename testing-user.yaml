@@ -1,7 +1,7 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: testing-user
+  name: testing-user-2
   title: Tessting user template parameter
   description: Says Hello to a specified name.
 spec:
