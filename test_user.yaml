@@ -1,0 +1,29 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: print-parameter
+  title: Print Parameter Template
+  description: A simple Backstage scaffolder template to print a parameter.
+  tags:
+    - example
+    - debug
+spec:
+  owner: team@example.com
+  parameters:
+    - title: User Input
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          title: Message to Print
+          description: The message you want to print in the logs.
+  steps:
+    - id: print-message
+      name: Print the message
+      action: run:script
+      input:
+        script: |
+          echo "The message is: {{ parameters.message }}"
+  output:
+    result: "Message '{{ parameters.message }}' has been printed."
