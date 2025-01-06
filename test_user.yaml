@@ -9,6 +9,7 @@ metadata:
     - debug
 spec:
   owner: team@example.com
+  type: service
   parameters:
     - title: User Input
       required:
