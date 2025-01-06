@@ -1,30 +1,24 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: print-parameter
-  title: Print Parameter Template
-  description: A simple Backstage scaffolder template to print a parameter.
-  tags:
-    - example
-    - debug
+  name: hello-world-template
+  title: Hello World
+  description: Says Hello to a specified name.
 spec:
-  owner: team@example.com
+  owner: backstage/techdocs-core
   type: service
+
   parameters:
-    - title: User Input
+    - title: You are about to say hello to your first Backstage Template
       required:
-        - message
+        - name
       properties:
-        message:
+        name:
           type: string
-          title: Message to Print
-          description: The message you want to print in the logs.
+
   steps:
-    - id: print-message
-      name: Print the message
-      action: run:script
+    - id: log-message
+      name: Log Message
+      action: debug:log
       input:
-        script: |
-          echo "The message is: {{ parameters.message }}"
-  output:
-    result: "Message '{{ parameters.message }}' has been printed."
+        message: 'Hello, ${{ parameters.name }}!'
