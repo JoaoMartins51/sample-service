@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tech-platform-decision-records
+  description: xxxxxx
+  links:
+    - title: architecture-goals
+      url: https://pages.github.mpi-internal.com/Kleinanzeigen/tech-platform-decision-records/architecture-goals/
+    - title: backend-tech-radar
+      url: https://pages.github.mpi-internal.com/Kleinanzeigen/tech-platform-decision-records/pages/backend-tech-radar.html
+    - title: frontend-tech-radar
+      url: https://pages.github.mpi-internal.com/Kleinanzeigen/tech-platform-decision-records/pages/frontend-tech-radar.html
+  annotations:
+    backstage.io/adr-location: .
+    jenkins.io/job-full-name: xxxxxx
+    github.com/project-slug: Kleinanzeigen/tech-platform-decision-records
+    backstage.io/techdocs-ref: dir:.
+
+spec:
+  type: website
+  owner: architecture-cop
+  lifecycle: production
