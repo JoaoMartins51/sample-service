@@ -1,8 +1,8 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: test-workspace-template-actions
-  title: Test Workspace Template Actions
+  name: test-workspace-template-actions3
+  title: Test Workspace Template Actions3
   description: Test template for workspace:template and workspace:template:file actions
 spec:
   owner: user:guest
