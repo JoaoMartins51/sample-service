@@ -1,0 +1,88 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-workspace-template-actions
+  title: Test Workspace Template Actions
+  description: Test template for workspace:template and workspace:template:file actions
+spec:
+  owner: user:guest
+  type: service
+  parameters:
+    - title: Project Details
+      properties:
+        name:
+          title: Project Name
+          type: string
+          default: my-project
+        description:
+          title: Description
+          type: string
+          default: A test project
+        owner:
+          title: Owner
+          type: string
+          default: team-a
+  steps:
+    # Step 1: Write a skeleton directory to the workspace
+    - id: create-skeleton
+      name: Create skeleton files
+      action: roadiehq:utils:fs:write
+      input:
+        path: ./skeleton/README.md
+        content: |
+          # ${{ values.name }}
+          
+          ${{ values.description }}
+          
+          Owner: ${{ values.owner }}
+
+    - id: create-skeleton-config
+      name: Create skeleton config
+      action: roadiehq:utils:fs:write
+      input:
+        path: ./skeleton/config.json
+        content: |
+          {
+            "name": "${{ values.name }}",
+            "version": "1.0.0"
+          }
+
+    # Step 2: Use workspace:template to process the skeleton directory
+    - id: template-skeleton
+      name: Template the skeleton directory
+      action: workspace:template
+      input:
+        sourcePath: ./skeleton
+        targetPath: ./output
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+
+    # Step 3: Write a single template file
+    - id: create-single-template
+      name: Create single template file
+      action: roadiehq:utils:fs:write
+      input:
+        path: ./template.txt
+        content: |
+          Project: ${{ values.name }}
+          Built by: ${{ values.owner }}
+
+    # Step 4: Use workspace:template:file to process the single file
+    - id: template-single-file
+      name: Template single file
+      action: workspace:template:file
+      input:
+        sourcePath: ./template.txt
+        targetPath: ./output/generated.txt
+        values:
+          name: ${{ parameters.name }}
+          owner: ${{ parameters.owner }}
+
+    # Step 5: Debug output
+    - id: debug-output
+      name: Show workspace contents
+      action: debug:log
+      input:
+        listWorkspace: true
