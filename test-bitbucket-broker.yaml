@@ -1,0 +1,776 @@
+# Test Scaffolder Templates for Bitbucket Publish Actions
+# These templates are for testing the publish:bitbucketServer and publish:bitbucketCloud actions
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-server
+  title: Test Publish to Bitbucket Server
+  description: Test template for the publish:bitbucketServer scaffolder action
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-server
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: Description of the component
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.example.com
+            allowedProjects:
+              - MY_PROJECT
+        defaultBranch:
+          title: Default Branch
+          type: string
+          description: The default branch for the repository
+          default: main
+        repoVisibility:
+          title: Repository Visibility
+          type: string
+          description: The visibility of the repository
+          default: private
+          enum:
+            - private
+            - public
+
+    - title: Git Configuration
+      properties:
+        gitCommitMessage:
+          title: Initial Commit Message
+          type: string
+          description: The commit message for the initial commit
+          default: 'Initial commit from scaffolder'
+        gitAuthorName:
+          title: Git Author Name
+          type: string
+          description: The author name for the initial commit
+        gitAuthorEmail:
+          title: Git Author Email
+          type: string
+          description: The author email for the initial commit
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+
+    - id: publish
+      name: Publish to Bitbucket Server
+      action: publish:bitbucketServer
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: ${{ parameters.defaultBranch }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        gitCommitMessage: ${{ parameters.gitCommitMessage }}
+        gitAuthorName: ${{ parameters.gitAuthorName }}
+        gitAuthorEmail: ${{ parameters.gitAuthorEmail }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-server-minimal
+  title: Test Publish to Bitbucket Server (Minimal)
+  description: Minimal test template for the publish:bitbucketServer scaffolder action
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-server
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.example.com
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+
+    - id: publish
+      name: Publish to Bitbucket Server
+      action: publish:bitbucketServer
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-server-with-token
+  title: Test Publish to Bitbucket Server (With Token)
+  description: Test template for publish:bitbucketServer with explicit token
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-server
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.example.com
+        token:
+          title: Bitbucket Token
+          type: string
+          description: Personal access token for Bitbucket Server
+          ui:widget: password
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+
+    - id: publish
+      name: Publish to Bitbucket Server
+      action: publish:bitbucketServer
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        token: ${{ parameters.token }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-cloud
+  title: Test Publish to Bitbucket Cloud
+  description: Test template for the publish:bitbucketCloud scaffolder action
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-cloud
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: Description of the component
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.org
+            allowedOwners:
+              - my-workspace
+            allowedProjects:
+              - MY_PROJECT
+        defaultBranch:
+          title: Default Branch
+          type: string
+          description: The default branch for the repository
+          default: main
+        repoVisibility:
+          title: Repository Visibility
+          type: string
+          description: The visibility of the repository
+          default: private
+          enum:
+            - private
+            - public
+
+    - title: Git Configuration
+      properties:
+        gitCommitMessage:
+          title: Initial Commit Message
+          type: string
+          description: The commit message for the initial commit
+          default: 'Initial commit from scaffolder'
+        gitAuthorName:
+          title: Git Author Name
+          type: string
+          description: The author name for the initial commit
+        gitAuthorEmail:
+          title: Git Author Email
+          type: string
+          description: The author email for the initial commit
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+
+    - id: publish
+      name: Publish to Bitbucket Cloud
+      action: publish:bitbucketCloud
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: ${{ parameters.defaultBranch }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        gitCommitMessage: ${{ parameters.gitCommitMessage }}
+        gitAuthorName: ${{ parameters.gitAuthorName }}
+        gitAuthorEmail: ${{ parameters.gitAuthorEmail }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-cloud-minimal
+  title: Test Publish to Bitbucket Cloud (Minimal)
+  description: Minimal test template for the publish:bitbucketCloud scaffolder action
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-cloud
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.org
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+
+    - id: publish
+      name: Publish to Bitbucket Cloud
+      action: publish:bitbucketCloud
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-cloud-with-token
+  title: Test Publish to Bitbucket Cloud (With Token)
+  description: Test template for publish:bitbucketCloud with explicit token
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-cloud
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.org
+        token:
+          title: Bitbucket App Password
+          type: string
+          description: App password for Bitbucket Cloud
+          ui:widget: password
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+
+    - id: publish
+      name: Publish to Bitbucket Cloud
+      action: publish:bitbucketCloud
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        token: ${{ parameters.token }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-server-pull-request
+  title: Test Publish Bitbucket Server Pull Request
+  description: Test template for the publish:bitbucketServer:pullRequest scaffolder action
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-server
+    - pull-request
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Pull Request Information
+      required:
+        - repoUrl
+        - title
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.example.com
+        title:
+          title: PR Title
+          type: string
+          description: Title for the pull request
+        description:
+          title: PR Description
+          type: string
+          description: Description for the pull request
+        sourceBranch:
+          title: Source Branch
+          type: string
+          description: The branch containing the changes
+          default: feature-branch
+        targetBranch:
+          title: Target Branch
+          type: string
+          description: The branch to merge into
+          default: main
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: test-pr
+
+    - id: publish-pr
+      name: Create Pull Request to Bitbucket Server
+      action: publish:bitbucketServer:pullRequest
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        title: ${{ parameters.title }}
+        description: ${{ parameters.description }}
+        sourceBranch: ${{ parameters.sourceBranch }}
+        targetBranch: ${{ parameters.targetBranch }}
+
+  output:
+    links:
+      - title: Pull Request
+        url: ${{ steps['publish-pr'].output.pullRequestUrl }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-cloud-all-options
+  title: Test Publish to Bitbucket Cloud (All Options)
+  description: Test template demonstrating all available options for publish:bitbucketCloud
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-cloud
+    - comprehensive
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: Description of the component
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.org
+            allowedOwners:
+              - my-workspace
+            allowedProjects:
+              - MY_PROJECT
+        defaultBranch:
+          title: Default Branch
+          type: string
+          description: The default branch for the repository
+          default: main
+        repoVisibility:
+          title: Repository Visibility
+          type: string
+          description: The visibility of the repository
+          default: private
+          enum:
+            - private
+            - public
+        sourcePath:
+          title: Source Path
+          type: string
+          description: Path within the workspace to publish (defaults to entire workspace)
+
+    - title: Git Configuration
+      properties:
+        gitCommitMessage:
+          title: Initial Commit Message
+          type: string
+          description: The commit message for the initial commit
+          default: 'Initial commit from scaffolder'
+        gitAuthorName:
+          title: Git Author Name
+          type: string
+          description: The author name for the initial commit
+          default: Scaffolder
+        gitAuthorEmail:
+          title: Git Author Email
+          type: string
+          description: The author email for the initial commit
+          default: scaffolder@backstage.io
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+
+    - id: publish
+      name: Publish to Bitbucket Cloud
+      action: publish:bitbucketCloud
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: ${{ parameters.defaultBranch }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        sourcePath: ${{ parameters.sourcePath }}
+        gitCommitMessage: ${{ parameters.gitCommitMessage }}
+        gitAuthorName: ${{ parameters.gitAuthorName }}
+        gitAuthorEmail: ${{ parameters.gitAuthorEmail }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+    text:
+      - title: Repository URL
+        content: ${{ steps['publish'].output.remoteUrl }}
+      - title: Repository Contents URL
+        content: ${{ steps['publish'].output.repoContentsUrl }}
+
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: test-publish-bitbucket-server-all-options
+  title: Test Publish to Bitbucket Server (All Options)
+  description: Test template demonstrating all available options for publish:bitbucketServer
+  tags:
+    - test
+    - bitbucket
+    - bitbucket-server
+    - comprehensive
+spec:
+  owner: team-a
+  type: service
+
+  parameters:
+    - title: Repository Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: Description of the component
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.example.com
+            allowedProjects:
+              - MY_PROJECT
+        defaultBranch:
+          title: Default Branch
+          type: string
+          description: The default branch for the repository
+          default: main
+        repoVisibility:
+          title: Repository Visibility
+          type: string
+          description: The visibility of the repository
+          default: private
+          enum:
+            - private
+            - public
+        sourcePath:
+          title: Source Path
+          type: string
+          description: Path within the workspace to publish (defaults to entire workspace)
+
+    - title: Git Configuration
+      properties:
+        gitCommitMessage:
+          title: Initial Commit Message
+          type: string
+          description: The commit message for the initial commit
+          default: 'Initial commit from scaffolder'
+        gitAuthorName:
+          title: Git Author Name
+          type: string
+          description: The author name for the initial commit
+          default: Scaffolder
+        gitAuthorEmail:
+          title: Git Author Email
+          type: string
+          description: The author email for the initial commit
+          default: scaffolder@backstage.io
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+
+    - id: publish
+      name: Publish to Bitbucket Server
+      action: publish:bitbucketServer
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: ${{ parameters.defaultBranch }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        sourcePath: ${{ parameters.sourcePath }}
+        gitCommitMessage: ${{ parameters.gitCommitMessage }}
+        gitAuthorName: ${{ parameters.gitAuthorName }}
+        gitAuthorEmail: ${{ parameters.gitAuthorEmail }}
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+    text:
+      - title: Repository URL
+        content: ${{ steps['publish'].output.remoteUrl }}
+      - title: Repository Contents URL
+        content: ${{ steps['publish'].output.repoContentsUrl }}
