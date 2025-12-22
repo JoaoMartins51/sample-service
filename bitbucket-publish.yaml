@@ -1,6 +1,3 @@
-# Template to reproduce the ROADIE_BROKER bug
-# This will fail with: "TypeError: Failed to parse URL from ${ROADIE_BROKER}/..."
-# when the Bitbucket Server integration uses a brokered connection
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
@@ -26,11 +23,6 @@ spec:
           default: 'integration'
           description: Branch to create PR against
   steps:
-    - id: debug-start
-      name: Debug - Starting
-      action: debug:log
-      input:
-        message: 'Testing Bitbucket Server PR with brokered connection'
     - id: create-pr
       name: Create Pull Request
       action: publish:bitbucketServer:pull-request
