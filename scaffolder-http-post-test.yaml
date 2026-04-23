@@ -1,0 +1,31 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: http-backstage-request-post-smoke-test
+  title: HTTP Backstage Request POST Smoke Test
+  description: >
+    Exercises http:backstage:request with a POST to /catalog/refresh.
+    Use to verify end-to-end auth + routing for API- and UI-triggered
+    scaffolder tasks against an allowlisted backend plugin endpoint.
+spec:
+  owner: platform-team
+  type: test
+  parameters: []
+  steps:
+    - id: post-catalog-refresh
+      name: POST /catalog/refresh
+      action: http:backstage:request
+      input:
+        path: /catalog/refresh
+        method: POST
+        headers:
+          content-type: application/json
+          accept: application/json
+        body:
+          entityRef: user:default/guest
+        logRequestPath: true
+        continueOnBadResponse: true
+  output:
+    responseCode: ${{ steps['post-catalog-refresh'].output.code }}
+    responseBody: ${{ steps['post-catalog-refresh'].output.body }}
+    responseHeaders: ${{ steps['post-catalog-refresh'].output.headers }}
